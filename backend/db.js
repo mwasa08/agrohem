@@ -1,9 +1,16 @@
 ﻿import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new Database(path.join(__dirname, "plantai.db"));
+
+// Use /tmp on Render (production) or local folder in development
+const dbPath = process.env.NODE_ENV === "production"
+  ? "/tmp/plantai.db"
+  : path.join(__dirname, "plantai.db");
+
+const db = new Database(dbPath);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
