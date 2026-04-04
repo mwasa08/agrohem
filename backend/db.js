@@ -1,49 +1,22 @@
-﻿import Database from "better-sqlite3";
+﻿import { Low } from "lowdb";
+import { JSONFilePreset } from "lowdb/node";
 import path from "path";
 import { fileURLToPath } from "url";
-import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Use /tmp on Render (production) or local folder in development
 const dbPath = process.env.NODE_ENV === "production"
-  ? "/tmp/plantai.db"
-  : path.join(__dirname, "plantai.db");
+  ? "/tmp/plantai.json"
+  : path.join(__dirname, "plantai.json");
 
-const db = new Database(dbPath);
+const defaultData = { users: [], scans: [], reminders: [] };
+const db = await JSONFilePreset(dbPath, defaultData);
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    created_at INTEGER NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS scans (
-    id TEXT PRIMARY KEY,
-    user_email TEXT NOT NULL,
-    image_data TEXT,
-    image_name TEXT,
-    result TEXT NOT NULL,
-    timestamp INTEGER NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS reminders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_email TEXT NOT NULL,
-    plant_name TEXT NOT NULL,
-    note TEXT,
-    remind_at INTEGER NOT NULL,
-    created_at INTEGER NOT NULL
-  );
-`);
-
-const existing = db.prepare("SELECT * FROM users WHERE email = ?").get("demo@plantai.app");
-if (!existing) {
-  db.prepare("INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, ?)")
-    .run("Demo User", "demo@plantai.app", "demo123", Date.now());
+// Seed demo account
+const exists = db.data.users.find(u => u.email === "demo@plantai.app");
+if (!exists) {
+  db.data.users.push({ id: 1, name: "Demo User", email: "demo@plantai.app", password: "demo123", created_at: Date.now() });
+  await db.write();
 }
 
 export default db;
