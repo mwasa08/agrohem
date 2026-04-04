@@ -3,13 +3,15 @@ import { AuthService } from "./services/authService";
 import { s } from "./styles";
 import { T } from "./tokens";
 import { Spinner, Leaf } from "./ui/SharedUI";
-import LoginScreen    from "./components/LoginScreen";
-import SignupScreen   from "./components/SignupScreen";
-import HomeScreen     from "./components/HomeScreen";
-import ScanScreen     from "./components/ScanScreen";
-import ResultScreen   from "./components/ResultScreen";
-import HistoryScreen  from "./components/HistoryScreen";
-import RemindersScreen from "./components/RemindersScreen";
+import LoginScreen          from "./components/LoginScreen";
+import SignupScreen         from "./components/SignupScreen";
+import HomeScreen           from "./components/HomeScreen";
+import ScanScreen           from "./components/ScanScreen";
+import ResultScreen         from "./components/ResultScreen";
+import HistoryScreen        from "./components/HistoryScreen";
+import RemindersScreen      from "./components/RemindersScreen";
+import ProfileScreen        from "./components/ProfileScreen";
+import ForgotPasswordScreen from "./components/ForgotPasswordScreen";
 
 export default function App() {
   const [screen, setScreen]           = useState(null);
@@ -18,6 +20,8 @@ export default function App() {
   const [booting, setBooting]         = useState(true);
 
   useEffect(() => {
+    const lang = localStorage.getItem("language") || "en";
+    document.dir = lang === "ar" ? "rtl" : "ltr";
     AuthService.getSession().then(s => {
       setSession(s);
       setScreen(s ? "home" : "login");
@@ -43,13 +47,15 @@ export default function App() {
   }
 
   const screens = {
-    login:     <LoginScreen    goTo={goTo} onLogin={setSession} />,
-    signup:    <SignupScreen   goTo={goTo} onLogin={setSession} />,
-    home:      <HomeScreen     goTo={goTo} session={session} onLogout={() => setSession(null)} />,
-    scan:      <ScanScreen     goTo={goTo} onScanComplete={setCurrentScan} />,
-    result:    <ResultScreen   goTo={goTo} currentScan={currentScan} />,
-    history:   <HistoryScreen  goTo={goTo} onSelectScan={setCurrentScan} />,
-    reminders: <RemindersScreen goTo={goTo} session={session} />,
+    login:   <LoginScreen          goTo={goTo} onLogin={setSession} />,
+    signup:  <SignupScreen         goTo={goTo} onLogin={setSession} />,
+    forgot:  <ForgotPasswordScreen goTo={goTo} />,
+    home:    <HomeScreen           goTo={goTo} session={session} onLogout={() => setSession(null)} />,
+    scan:    <ScanScreen           goTo={goTo} onScanComplete={setCurrentScan} />,
+    result:  <ResultScreen         goTo={goTo} currentScan={currentScan} />,
+    history: <HistoryScreen        goTo={goTo} onSelectScan={setCurrentScan} />,
+    reminders: <RemindersScreen    goTo={goTo} session={session} />,
+    profile: <ProfileScreen        goTo={goTo} session={session} onSessionUpdate={setSession} />,
   };
 
   return (
