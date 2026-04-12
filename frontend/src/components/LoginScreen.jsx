@@ -24,16 +24,6 @@ const LoginScreen = ({ goTo, onLogin }) => {
     finally { setLoading(false); }
   };
 
-  const handleDemo = async () => {
-    setLoading(true); setError("");
-    try {
-      await AuthService.ensureDemoAccount();
-      const session = await AuthService.login("demo@plantai.app", "demo123");
-      onLogin(session); goTo("home");
-    } catch (e) { setError("Demo login failed"); }
-    finally { setLoading(false); }
-  };
-
   return (
     <div className="screen-enter" style={{ ...s.screen, paddingBottom: 40, overflowY: "auto" }}>
       {showLang && <LanguageSwitcher onClose={() => setShowLang(false)} />}
@@ -44,7 +34,7 @@ const LoginScreen = ({ goTo, onLogin }) => {
           <Leaf size={34} />
         </div>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 500, marginBottom: 8, color: T.text }}>{t("welcome")}</h2>
-        <p style={{ color: T.textMuted, fontSize: 15 }}>Your Digital Farming Partiner.</p>
+        <p style={{ color: T.textMuted, fontSize: 15 }}>Log in to monitor your plant health.</p>
       </div>
       <div style={{ padding: "0 24px", display: "flex", flexDirection: "column", gap: 16 }}>
         <ErrorBanner msg={error} />
@@ -58,9 +48,6 @@ const LoginScreen = ({ goTo, onLogin }) => {
         <BtnPrimary onClick={handleLogin} disabled={loading}>
           {loading ? <Spinner size={18} /> : t("login")}
         </BtnPrimary>
-        <button onClick={handleDemo} disabled={loading} style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "12px", color: T.textMuted, fontSize: 14, cursor: "pointer", transition: "all 0.2s" }}>
-          🌿 {t("demoAccount")}
-        </button>
         <Divider label="OR CONTINUE WITH" />
         <SocialBtns />
         <p style={{ textAlign: "center", fontSize: 13, color: T.textMuted }}>
