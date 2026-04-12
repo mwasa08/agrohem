@@ -37,7 +37,7 @@ const SignupScreen = ({ goTo, onLogin }) => {
           <Leaf size={32} />
         </div>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 500, marginBottom: 6, color: T.text }}>{t("signup")}</h2>
-        <p style={{ color: T.textMuted, fontSize: 14 }}>Start monitoring your plants with AI.</p>
+        <p style={{ color: T.textMuted, fontSize: 14 }}>Start monitoring your plants with Agrohem smart AI</p>
       </div>
       <div style={{ padding: "0 24px", display: "flex", flexDirection: "column", gap: 16 }}>
         <ErrorBanner msg={error} />

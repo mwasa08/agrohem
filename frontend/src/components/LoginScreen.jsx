@@ -44,7 +44,7 @@ const LoginScreen = ({ goTo, onLogin }) => {
           <Leaf size={34} />
         </div>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 500, marginBottom: 8, color: T.text }}>{t("welcome")}</h2>
-        <p style={{ color: T.textMuted, fontSize: 15 }}>Log in to monitor your plant health.</p>
+        <p style={{ color: T.textMuted, fontSize: 15 }}>Your Digital Farming Partiner.</p>
       </div>
       <div style={{ padding: "0 24px", display: "flex", flexDirection: "column", gap: 16 }}>
         <ErrorBanner msg={error} />
