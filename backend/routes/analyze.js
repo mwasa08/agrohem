@@ -1,5 +1,5 @@
 ﻿import { Router } from "express";
-import { ANTHROPIC_MODEL, MAX_TOKENS, SYSTEM_PROMPT, USER_PROMPT } from "../config/prompts.js";
+import { SYSTEM_PROMPT, USER_PROMPT } from "../config/prompts.js";
 
 const router = Router();
 
@@ -8,31 +8,46 @@ router.post("/", async (req, res) => {
   if (!imageBase64 || !mimeType) return res.status(400).json({ error: "imageBase64 and mimeType are required" });
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        "Authorization": `Bearer ${process.env.GROK_API_KEY}`,
       },
       body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: MAX_TOKENS,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: [
-          { type: "image", source: { type: "base64", media_type: mimeType, data: imageBase64 } },
-          { type: "text", text: USER_PROMPT },
-        ]}],
+        model: "grok-2-vision-latest",
+        max_tokens: 1000,
+        messages: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT,
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${imageBase64}`,
+                },
+              },
+              {
+                type: "text",
+                text: USER_PROMPT,
+              },
+            ],
+          },
+        ],
       }),
     });
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err.error?.message || "Anthropic API error" });
+      return res.status(response.status).json({ error: err.error?.message || "Grok API error" });
     }
 
     const data = await response.json();
-    const raw  = data.content.map(b => b.text || "").join("").trim();
+    const raw = data.choices?.[0]?.message?.content?.trim() || "";
 
     let result;
     try { result = JSON.parse(raw); } catch {
