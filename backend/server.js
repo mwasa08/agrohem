@@ -31,6 +31,10 @@ app.use("/api/auth",      authRoute);
 app.use("/api/history",   historyRoute);
 app.use("/api/reminders", remindersRoute);
 
-app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+app.get("/api/health", (_req, res) => res.json({ 
+  status: "ok",
+  plantid_key_set: !!process.env.PLANTID_API_KEY,
+  plantid_key_preview: process.env.PLANTID_API_KEY ? process.env.PLANTID_API_KEY.substring(0, 6) + "..." : "NOT SET"
+}));
 
 app.listen(PORT, () => console.log(`PlantAI server running on http://localhost:${PORT}`));
