@@ -6,69 +6,63 @@ router.post("/", async (req, res) => {
   const { imageBase64, mimeType } = req.body;
   if (!imageBase64 || !mimeType) return res.status(400).json({ error: "imageBase64 and mimeType are required" });
 
-  try {
-    const response = await fetch("https://api.plant.id/v3/health_assessment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Api-Key": process.env.PLANTID_API_KEY,
-      },
-      body: JSON.stringify({
-        images: [`data:${mimeType};base64,${imageBase64}`],
-        health: "all",
-        classification_level: "species",
-        details: [
-          "common_names",
-          "description",
-          "treatment",
-          "classification",
-          "wiki_image"
-        ],
-      }),
-    });
+  const apiKey = process.env.PLANTID_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: "PLANTID_API_KEY is not set on the server" });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err.error?.message || "Plant.id API error" });
-    }
+  try {
+    // Convert base64 to blob for PlantNet API
+    const imageBuffer = Buffer.from(imageBase64, "base64");
+    const blob = new Blob([imageBuffer], { type: mimeType });
+
+    const formData = new FormData();
+    formData.append("images", blob, "plant.jpg");
+    formData.append("organs", "leaf");
+
+    const response = await fetch(
+      `https://my-api.plantnet.org/v2/identify/all?api-key=${apiKey}&lang=en&include-related-images=false`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
     const data = await response.json();
+    console.log("PlantNet response:", JSON.stringify(data).substring(0, 300));
 
-    // Parse Plant.id response into our app format
-    const classification = data.result?.classification?.suggestions?.[0];
-    const disease = data.result?.disease?.suggestions?.[0];
-    const isHealthy = data.result?.is_healthy?.binary ?? true;
-    const healthProb = data.result?.is_healthy?.probability ?? 1;
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data?.message || `PlantNet API error ${response.status}` });
+    }
+
+    // Parse PlantNet response into our app format
+    const best = data.results?.[0];
+    const plantName = best?.species?.commonNames?.[0] || best?.species?.scientificNameWithoutAuthor || "Unknown Plant";
+    const scientificName = best?.species?.scientificNameWithoutAuthor || "";
+    const confidence = Math.round((best?.score || 0.8) * 100);
 
     const result = {
-      plantName: classification?.name || "Unknown Plant",
-      scientificName: classification?.name || "",
-      isHealthy: isHealthy,
-      confidence: Math.round((classification?.probability || 0.8) * 100),
-      disease: isHealthy ? null : (disease?.name || "Unknown Disease"),
-      severity: isHealthy ? "none" : (healthProb < 0.3 ? "severe" : healthProb < 0.6 ? "moderate" : "mild"),
-      symptoms: disease?.details?.description
-        ? [disease.details.description.substring(0, 120)]
-        : isHealthy ? ["Plant appears healthy"] : ["Disease symptoms detected"],
-      treatments: disease?.details?.treatment?.chemical
-        ? [
-            disease.details.treatment.chemical.substring(0, 120),
-            disease.details.treatment.biological?.substring(0, 120) || "Consult a local agronomist",
-            disease.details.treatment.prevention?.substring(0, 120) || "Monitor plant regularly",
-          ].filter(Boolean)
-        : ["Monitor the plant regularly", "Ensure proper watering", "Check for pests"],
-      careAdvice: [
-        classification?.details?.description?.value?.substring(0, 120) || "Ensure adequate sunlight and water",
-        "Remove affected leaves if any disease is present",
+      plantName,
+      scientificName,
+      isHealthy: true,
+      confidence,
+      disease: null,
+      severity: "none",
+      symptoms: ["No disease detection available with PlantNet — plant identified successfully"],
+      treatments: [
+        "Ensure adequate sunlight based on species requirements",
+        "Water according to the species needs",
+        "Check for pests regularly",
       ],
-      description: isHealthy
-        ? `This plant appears to be a ${classification?.name || "plant"} and looks healthy. Continue regular care.`
-        : `This ${classification?.name || "plant"} shows signs of ${disease?.name || "disease"}. Treatment is recommended.`,
-      urgency: isHealthy ? "low" : (healthProb < 0.3 ? "high" : "medium"),
+      careAdvice: [
+        `${plantName} identified with ${confidence}% confidence`,
+        "Consult a local agronomist for disease diagnosis if needed",
+      ],
+      description: `This plant has been identified as ${plantName} (${scientificName}) with ${confidence}% confidence. PlantNet specializes in plant identification.`,
+      urgency: "low",
     };
 
     res.json(result);
   } catch (err) {
+    console.error("PlantNet error:", err);
     res.status(500).json({ error: err.message || "Internal server error" });
   }
 });
